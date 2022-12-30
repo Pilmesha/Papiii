@@ -313,6 +313,6 @@ class GUI:
             ok_btn.pack()
 
 if __name__ == '__main__':
-    window = tk.Tk(className="Your whore")
+    window = tk.Tk(className="Slave")
     App = GUI(window)
     window.mainloop()
