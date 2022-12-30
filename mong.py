@@ -1,3 +1,4 @@
+import matplotlib.pyplot
 import pandas as pn
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,23 +11,14 @@ class Pollution:
     def __init__(self, id = "NONE", name = "NONE", gdp = 0.0, organic = 0.0, glass = 0.0, metal=0.0, other=0.0):
         self.__id = id
         self.__name = name
-        try:
-            self.__gdp = gdp
-            self.__organic = organic
-            self.__glass = glass
-            self.__metal = metal
-            self.__other = other
-        except TypeError:
-            window = tk.Tk(className="Warning")
-            lbl_error = tk.Label(master=window, text="Invalid type")
-            lbl_error.pack()
-            ok_btn = tk.Button(master=window, text="OK", command=self.click_ok)
+        self.__gdp = gdp
+        self.__organic = organic
+        self.__glass = glass
+        self.__metal = metal
+        self.__other = other
     #getter
     def getData(self):
         return (self.__id, self.__name, self.__gdp, self.__organic, self.__glass, self.__metal, self.__other)
-    #
-    def click_ok(self, event = None):
-        window.after(1000, window.destroy)
 #ინტერფეისის კლასი
 class GUI:
     def __init__(self,root):
@@ -123,6 +115,9 @@ class GUI:
                 cursor.executemany(conn, poll_arr)
             cursor.close()
 
+    def click_ok(self, event = None):
+        self.warn_window.after(500, self.warn_window.destroy)
+
     def Add_Data(self, event=None):
         '''
         :param event: ამ შემთხვევაში არის დაწკაპუნება
@@ -182,40 +177,55 @@ class GUI:
         მონაცემთა ბაზაში ემატება ობიექტის ველები
         '''
         conn = sqlite3.connect('new_database.db')
-        p = Pollution(
-            self.entry_id.get(),
-            self.entry_name.get(),
-            float(self.entry_gdp.get()),
-            float(self.entry_org.get()),
-            float(self.entry_glass.get()),
-            float(self.entry_metal.get()),
-            float(self.entry_other.get())
-        )
+        try:
+            p = Pollution(
+                self.entry_id.get(),
+                self.entry_name.get(),
+                float(self.entry_gdp.get()),
+                float(self.entry_org.get()),
+                float(self.entry_glass.get()),
+                float(self.entry_metal.get()),
+                float(self.entry_other.get())
+            )
+            with sqlite3.connect('new_database.db') as conn:
+                cursor = conn.cursor()
+                self.conn = """
+                        insert or ignore into Pollution (Region_ID, Country_name, GDP, Organic_waste, Glass, Metal, Other)
+                        values 
+                        (?,?,?,?,?,?,?)
+                    """
+                tup = p.getData()
+                cursor.execute(self.conn, tup)
+            # ველების გასუფთავაება
+            self.entry_id.delete(0, 'end')
+            self.entry_name.delete(0, 'end')
+            self.entry_gdp.delete(0, 'end')
+            self.entry_org.delete(0, 'end')
+            self.entry_glass.delete(0, 'end')
+            self.entry_metal.delete(0, 'end')
+            self.entry_other.delete(0, 'end')
 
-        with sqlite3.connect('new_database.db') as conn:
-            cursor = conn.cursor()
-            self.conn = """
-                    insert or ignore into Pollution (Region_ID, Country_name, GDP, Organic_waste, Glass, Metal, Other)
-                    values 
-                    (?,?,?,?,?,?,?)
-                """
-            tup = p.getData()
-            cursor.execute(self.conn, tup)
-        #ველების გასუფთავაება
-        self.entry_id.delete(0, 'end')
-        self.entry_name.delete(0, 'end')
-        self.entry_gdp.delete(0, 'end')
-        self.entry_org.delete(0, 'end')
-        self.entry_glass.delete(0, 'end')
-        self.entry_metal.delete(0, 'end')
-        self.entry_other.delete(0, 'end')
+        #თავს ვარიდებთ შეცდომას, როდესაც მომხმარებელს ველში არასწორი ტიპის მონაცემი შეყავს
+        except ValueError:
+            self.warn_window = tk.Tk(className="Warning!")
+            self.warn_window.geometry("300x300")
+            lbl_error = tk.Label(master=self.warn_window, text="Invalid type!")
+            lbl_error.pack()
+            ok_btn = tk.Button(
+                master=self.warn_window,
+                text="OK",
+                command=self.click_ok,
+                width=20,
+                height=5
+            )
+            ok_btn.pack()
 
     def AnaliseData(self, event=None):
         #მომხმარებლისთვის ჩამოსაშლელი მენიუები და ველები იქმნება
         lbl_diagtype = tk.Label(master=self.root, text="Diagram type",bg='black',fg='#f0eeed')
         lbl_diagtype.place(x=20,y=180)
         box_diagtype = ttk.Combobox(master=self.root, width=12, state='readonly')
-        box_diagtype['values'] = ["Scatter", "Bars", "Horizontal Bar", "Pie", "Line"]
+        box_diagtype['values'] = ["Scatter", "Bar", "Barh", "Pie", "Line"]
         box_diagtype.place(x=100, y=180)
 
         lbl_xcoord = tk.Label(master=self.root, text="X Coordinate",bg='black',fg='#f0eeed')
@@ -232,17 +242,33 @@ class GUI:
         box_ycoord = ttk.Combobox(master=self.root, width=12, state='readonly')
         box_ycoord['values'] = val
         box_ycoord.place(x=100, y=240)
+
+        lbl_color = tk.Label(master=self.root, text="Color",bg='black',fg='#f0eeed')
+        lbl_color.place(x=20, y=270)
+        box_color = ttk.Combobox(master=self.root, width=12, state='readonly')
+        colors = [
+                "blue",
+                "green",
+                "red",
+                "cyan",
+                "magenta",
+                "yellow",
+                "black",
+                "white"
+            ]
+        box_color['values'] = colors
+        box_color.place(x=100,y=270)
         btn_analise = tk.Button(
             master=self.root,
             text="Analise",
             width=10,
             height=2,
-            command=lambda : self.DrawGraphs(None, box_xcoord.get(), box_ycoord.get()),
+            command=lambda : self.DrawGraphs(None, box_xcoord.get(), box_ycoord.get(), box_diagtype.get().lower(), box_color.get()),
             bg='grey',
             fg='pink')
-        btn_analise.place(x=100, y=280)
+        btn_analise.place(x=100, y=300)
 
-    def DrawGraphs(self, event ,ind, val):
+    def DrawGraphs(self, event ,ind, val, type, color):
         df1 = self.df[val].groupby(self.df[ind])
         index = np.array(df1.count().index, dtype="str")
         value = np.array(df1.sum())
@@ -250,7 +276,10 @@ class GUI:
             ind: index,
             val: value,
         })
-        dat.plot(kind='bar', x=ind, y=val, color='red')
+        if type == 'pie':
+            dat = plt.pie(value, labels=index, shadow = True, autopct='%1.1f%%')
+        else:
+            dat.plot(kind=type, x=ind, y=val, color=color)
         plt.show()
 
 if __name__ == '__main__':
