@@ -214,27 +214,44 @@ class GUI:
         #მომხმარებლისთვის ჩამოსაშლელი მენიუები და ველები იქმნება
         lbl_diagtype = tk.Label(master=self.root, text="Diagram type",bg='black',fg='#f0eeed')
         lbl_diagtype.place(x=20,y=180)
-        selected_type = tk.StringVar()
-        selected_xcoord = tk.StringVar()
-        selected_ycoord = tk.StringVar()
-        box_diagtype = ttk.Combobox(master=self.root, width=12, state='readonly', textvariable=selected_type)
+        box_diagtype = ttk.Combobox(master=self.root, width=12, state='readonly')
         box_diagtype['values'] = ["Scatter", "Bars", "Horizontal Bar", "Pie", "Line"]
         box_diagtype.place(x=100, y=180)
 
         lbl_xcoord = tk.Label(master=self.root, text="X Coordinate",bg='black',fg='#f0eeed')
         lbl_xcoord.place(x=20,y=210)
-        box_xcoord = ttk.Combobox(master=self.root, width=12, state='readonly', textvariable=selected_xcoord)
-        df = pn.read_csv("country_level.csv")
-        val = [x for x in df.columns]
+        box_xcoord = ttk.Combobox(master=self.root, width=12, state='readonly')
+        self.con = sqlite3.connect('new_database.db')
+        self.df = pn.read_sql_query("select * from Pollution", self.con)
+        val  = [x for x in self.df.keys().values]
         box_xcoord['values'] = val
         box_xcoord.place(x=100, y=210)
 
         lbl_ycoord = tk.Label(master=self.root, text="Y Coordinate",bg='black',fg='#f0eeed')
         lbl_ycoord.place(x=20, y=240)
-        box_ycoord = ttk.Combobox(master=self.root, width=12, state='readonly', textvariable=selected_ycoord)
+        box_ycoord = ttk.Combobox(master=self.root, width=12, state='readonly')
         box_ycoord['values'] = val
         box_ycoord.place(x=100, y=240)
+        btn_analise = tk.Button(
+            master=self.root,
+            text="Analise",
+            width=10,
+            height=2,
+            command=lambda : self.DrawGraphs(None, box_xcoord.get(), box_ycoord.get()),
+            bg='grey',
+            fg='pink')
+        btn_analise.place(x=100, y=280)
 
+    def DrawGraphs(self, event ,ind, val):
+        df1 = self.df[val].groupby(self.df[ind])
+        index = np.array(df1.count().index, dtype="str")
+        value = np.array(df1.sum())
+        dat = pn.DataFrame({
+            ind: index,
+            val: value,
+        })
+        dat.plot(kind='bar', x=ind, y=val, color='red')
+        plt.show()
 
 if __name__ == '__main__':
     window = tk.Tk(className="Your whore")
