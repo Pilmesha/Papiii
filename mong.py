@@ -269,18 +269,33 @@ class GUI:
         btn_analise.place(x=100, y=300)
 
     def DrawGraphs(self, event ,ind, val, type, color):
-        df1 = self.df[val].groupby(self.df[ind])
-        index = np.array(df1.count().index, dtype="str")
-        value = np.array(df1.sum())
-        dat = pn.DataFrame({
-            ind: index,
-            val: value,
-        })
-        if type == 'pie':
-            dat = plt.pie(value, labels=index, shadow = True, autopct='%1.1f%%')
-        else:
-            dat.plot(kind=type, x=ind, y=val, color=color)
-        plt.show()
+        try:
+            df1 = self.df[val].groupby(self.df[ind])
+            index = np.array(df1.count().index, dtype="str")
+            value = np.array(df1.sum())
+            dat = pn.DataFrame({
+                ind: index,
+                val: value,
+            })
+            if type == 'pie':
+                dat = plt.pie(value, labels=index, shadow = True, autopct='%1.1f%%')
+            else:
+                dat.plot(kind=type, x=ind, y=val, color=color)
+            plt.show()
+        #თავს ვარიდებთ შეცდომას, როდესაც მომხმარებელი სავალდებულო ველებს არ ავსებს
+        except KeyError:
+            self.warn_window = tk.Tk(className="Warning!")
+            self.warn_window.geometry("300x300")
+            lbl_error = tk.Label(master=self.warn_window, text="One of the fields is empty")
+            lbl_error.pack()
+            ok_btn = tk.Button(
+                master=self.warn_window,
+                text="OK",
+                command=self.click_ok,
+                width=20,
+                height=5
+            )
+            ok_btn.pack()
 
 if __name__ == '__main__':
     window = tk.Tk(className="Your whore")
