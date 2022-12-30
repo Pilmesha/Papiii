@@ -207,6 +207,7 @@ class GUI:
 
         #თავს ვარიდებთ შეცდომას, როდესაც მომხმარებელს ველში არასწორი ტიპის მონაცემი შეყავს
         except ValueError:
+            #შეცდომის ფანჯრის შეცმნა
             self.warn_window = tk.Tk(className="Warning!")
             self.warn_window.geometry("300x300")
             lbl_error = tk.Label(master=self.warn_window, text="Invalid type!")
@@ -222,12 +223,15 @@ class GUI:
 
     def AnaliseData(self, event=None):
         #მომხმარებლისთვის ჩამოსაშლელი მენიუები და ველები იქმნება
+
+        #დიაგრამის ტიპი
         lbl_diagtype = tk.Label(master=self.root, text="Diagram type",bg='black',fg='#f0eeed')
         lbl_diagtype.place(x=20,y=180)
         box_diagtype = ttk.Combobox(master=self.root, width=12, state='readonly')
         box_diagtype['values'] = ["Scatter", "Bar", "Barh", "Pie", "Line"]
         box_diagtype.place(x=100, y=180)
 
+        #x კოორდინატის არჩევა
         lbl_xcoord = tk.Label(master=self.root, text="X Coordinate",bg='black',fg='#f0eeed')
         lbl_xcoord.place(x=20,y=210)
         box_xcoord = ttk.Combobox(master=self.root, width=12, state='readonly')
@@ -237,12 +241,14 @@ class GUI:
         box_xcoord['values'] = val
         box_xcoord.place(x=100, y=210)
 
+        #Y კოორდინატის არჩევა
         lbl_ycoord = tk.Label(master=self.root, text="Y Coordinate",bg='black',fg='#f0eeed')
         lbl_ycoord.place(x=20, y=240)
         box_ycoord = ttk.Combobox(master=self.root, width=12, state='readonly')
         box_ycoord['values'] = val
         box_ycoord.place(x=100, y=240)
 
+        #დიარგამის ფერის არჩევა
         lbl_color = tk.Label(master=self.root, text="Color",bg='black',fg='#f0eeed')
         lbl_color.place(x=20, y=270)
         box_color = ttk.Combobox(master=self.root, width=12, state='readonly')
@@ -269,8 +275,16 @@ class GUI:
         btn_analise.place(x=100, y=300)
 
     def DrawGraphs(self, event ,ind, val, type, color):
+        '''
+        :param event: დაწკაპურნება
+        :param ind: იქს კოორდინატი
+        :param val: იგრეკ კოორდინატი
+        :param type: დიაგრამის ტიპი
+        :param color: დიაგრამის ფერი
+        :return: გამოსახავს დიაგამას იმისდა მიხედვით, თუ რა დიაგრამის ტიპი, ფერი და დაჯგუფების მონაცემები გადასცა მომხმარებელმა
+        '''
         try:
-            df1 = self.df[val].groupby(self.df[ind])
+            df1 = self.df[val].groupby(self.df[ind]) #დაჯგუფება არგუმენტების მიხედვით
             index = np.array(df1.count().index, dtype="str")
             value = np.array(df1.sum())
             dat = pn.DataFrame({
@@ -281,9 +295,10 @@ class GUI:
                 dat = plt.pie(value, labels=index, shadow = True, autopct='%1.1f%%')
             else:
                 dat.plot(kind=type, x=ind, y=val, color=color)
-            plt.show()
+            plt.show() #დიაგრამის გამოსახვა
         #თავს ვარიდებთ შეცდომას, როდესაც მომხმარებელი სავალდებულო ველებს არ ავსებს
         except KeyError:
+            #შეცდომის ფანჯრის გამოტანა
             self.warn_window = tk.Tk(className="Warning!")
             self.warn_window.geometry("300x300")
             lbl_error = tk.Label(master=self.warn_window, text="One of the fields is empty")
